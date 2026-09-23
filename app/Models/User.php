@@ -22,6 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'phone',
     ];
 
     /**
@@ -45,5 +47,10 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function isManagement(): bool
+    {
+        return in_array($this->role, ['admin', 'coordinator'], true);
     }
 }

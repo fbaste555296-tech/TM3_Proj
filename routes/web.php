@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\{AuthController, CustomerPortalController, OperationsController};
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [CustomerPortalController::class, 'home'])->name('home');
+Route::middleware('guest')->group(function(){ Route::get('/login',[AuthController::class,'create'])->name('login'); Route::get('/admin/login',[AuthController::class,'adminLogin'])->name('admin.login'); Route::post('/login',[AuthController::class,'store']); Route::get('/register',[AuthController::class,'registerForm'])->name('register'); Route::post('/register',[AuthController::class,'register']); });
+Route::middleware('auth')->group(function(){ Route::get('/appointments',[CustomerPortalController::class,'createAppointment'])->name('appointments.create'); Route::post('/appointments',[CustomerPortalController::class,'storeAppointment'])->name('appointments.store'); Route::post('/logout',[AuthController::class,'destroy'])->name('logout'); });
+Route::middleware(['auth', 'management'])->prefix('admin')->group(function(){ Route::get('/dashboard',[OperationsController::class,'dashboard'])->name('dashboard'); Route::get('/customers',[OperationsController::class,'customers'])->name('customers.index'); Route::post('/customers',[OperationsController::class,'storeCustomer'])->name('customers.store'); Route::get('/jobs',[OperationsController::class,'jobs'])->name('jobs.index'); Route::post('/jobs',[OperationsController::class,'storeJob'])->name('jobs.store'); Route::patch('/jobs/{job}/status',[OperationsController::class,'updateJobStatus'])->name('jobs.status'); Route::get('/inventory',[OperationsController::class,'inventory'])->name('inventory.index'); Route::post('/inventory',[OperationsController::class,'storeInventory'])->name('inventory.store'); Route::get('/invoices',[OperationsController::class,'invoices'])->name('invoices.index'); Route::post('/invoices/{invoice}/pay',[OperationsController::class,'pay'])->name('invoices.pay'); Route::get('/reports',[OperationsController::class,'reports'])->name('reports.index'); });
