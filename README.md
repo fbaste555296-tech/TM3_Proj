@@ -7,6 +7,25 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Database
+
+This application uses MySQL for persistent data storage.
+
+- Host: `127.0.0.1`
+- Port: `3306`
+- Database: `triple_m3`
+- User: `root`
+
+Start MySQL in XAMPP before running the application. The database tables are
+created with:
+
+```bash
+php artisan migrate
+```
+
+You can view the saved data in the `triple_m3` database using phpMyAdmin at
+`http://localhost/phpmyadmin` or another MySQL client.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

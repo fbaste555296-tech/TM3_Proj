@@ -8,8 +8,27 @@ use Illuminate\Http\Request;
 
 class CustomerPortalController extends Controller
 {
+    public function dashboard(Request $request)
+    {
+        $customer = Customer::where('email', $request->user()->email)->first();
+        $appointments = $customer
+            ? $customer->jobs()->latest('scheduled_at')->get()
+            : collect();
+
+        return view('portal.dashboard', compact('appointments'));
+    }
+
     public function home()
     {
+        if (auth()->check()) {
+            $customer = Customer::where('email', auth()->user()->email)->first();
+            $appointments = $customer
+                ? $customer->jobs()->latest('scheduled_at')->get()
+                : collect();
+
+            return view('portal.customer-home', compact('appointments'));
+        }
+
         return view('portal.home');
     }
 
