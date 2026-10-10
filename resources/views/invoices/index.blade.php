@@ -1,1 +1,112 @@
-<x-layouts.app :heading="'Billing & payments'"><div class="card p-6"><div class="flex justify-between"><div><h2 class="brand">Invoices</h2><p class="mb-5 text-sm text-slate-500">Invoices are automatically created when a job is completed.</p></div><span class="rounded-full bg-emerald-50 px-3 py-1 h-fit text-xs font-bold text-emerald-700">Digital receipts</span></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="border-b text-xs uppercase text-slate-500"><tr><th class="py-3">Invoice</th><th>Customer</th><th>Total</th><th>Paid</th><th>Status</th><th></th></tr></thead><tbody>@forelse($invoices as $invoice)<tr class="border-b border-slate-100"><td class="py-4 font-semibold">{{ $invoice->invoice_number }}<br><span class="text-xs font-normal text-slate-500">{{ $invoice->created_at->format('M d, Y') }}</span></td><td>{{ $invoice->job->customer->name }}</td><td>₱{{ number_format($invoice->total,2) }}</td><td>₱{{ number_format($invoice->paid_amount,2) }}</td><td><span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">{{ $invoice->status }}</span></td><td>@if($invoice->status!=='Paid')<details><summary class="cursor-pointer text-xs font-bold text-emerald-700">Record payment</summary><form method="POST" action="{{ route('invoices.pay',$invoice) }}" class="mt-2 flex gap-1">@csrf<input class="w-24 rounded border p-1 text-xs" name="amount" type="number" step=".01" min=".01" value="{{ $invoice->total-$invoice->paid_amount }}"><select class="rounded border p-1 text-xs" name="method"><option>Cash</option><option>GCash</option><option>Bank Transfer</option></select><button class="rounded bg-emerald-600 px-2 text-xs text-white">Save</button></form></details>@endif</td></tr>@empty<tr><td colspan="6" class="py-10 text-center text-slate-500">No invoices yet. Complete a service job to create one.</td></tr>@endforelse</tbody></table></div><div class="mt-4">{{ $invoices->links() }}</div></div></x-layouts.app>
+<x-layouts.app :heading="'Billing & payments'">
+
+    <div class="card p-6">
+        <div class="flex justify-between">
+            <div>
+                <h2 class="brand">Invoices</h2>
+                <p class="mb-5 text-sm text-slate-500">Invoices are automatically created when a job is completed.</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <span style="background:none;color:#64748b;font-size:12px;font-weight:600;padding:0;height:fit-content;">Digital receipts</span>
+                <a href="{{ route('invoices.export') }}" class="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800">
+                    Export Excel
+                </a>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="border-b text-xs uppercase text-slate-500">
+                    <tr>
+                        <th class="px-3 py-3">Invoice</th>
+                        <th class="px-3 py-3">Customer</th>
+                        <th class="px-3 py-3">Phone</th>
+                        <th class="px-3 py-3">Reported issue</th>
+                        <th class="px-3 py-3">Total</th>
+                        <th class="px-3 py-3">Paid</th>
+                        <th class="px-3 py-3">Balance</th>
+                        <th class="px-3 py-3">Status</th>
+                        <th class="px-3 py-3"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($invoices as $invoice)
+                        @php
+                            $balance = max(0, round($invoice->total - $invoice->paid_amount, 2));
+                            $isPaid  = strtolower(trim($invoice->status)) === 'paid' || $balance <= 0;
+                            $phone   = $invoice->job?->customer?->phone;
+                            $issue   = trim((string) ($invoice->job?->notes ?? ''));
+                            $isLong  = \Illuminate\Support\Str::length($issue) > 60;
+                        @endphp
+                        <tr class="border-b border-slate-100 align-top">
+                            <td class="whitespace-nowrap px-3 py-4 font-semibold">
+                                {{ $invoice->invoice_number }}<br>
+                                <span class="text-xs font-normal text-slate-500">{{ $invoice->created_at->format('M d, Y') }}</span>
+                            </td>
+                            <td class="px-3 py-4">{{ $invoice->job?->customer?->name ?? 'Unknown customer' }}</td>
+                            <td class="whitespace-nowrap px-3 py-4">
+                                @if($phone)
+                                    <a href="tel:{{ $phone }}" class="font-semibold text-emerald-700 hover:underline">{{ $phone }}</a>
+                                @else
+                                    <span class="text-slate-400">No phone</span>
+                                @endif
+                            </td>
+
+                            {{-- Reported issue --}}
+                            <td class="px-3 py-4" style="min-width:200px;max-width:280px;">
+                                @if($issue === '')
+                                    <span class="text-slate-400">No issue reported</span>
+                                @elseif($isLong)
+                                    <details>
+                                        <summary class="cursor-pointer list-none">
+                                            <span class="text-slate-700">{{ \Illuminate\Support\Str::limit($issue, 60) }}</span>
+                                            <span class="whitespace-nowrap text-xs font-bold text-emerald-700">Show full</span>
+                                        </summary>
+                                        <p class="mt-2 whitespace-pre-line text-slate-700">{{ $issue }}</p>
+                                    </details>
+                                @else
+                                    <span class="whitespace-pre-line text-slate-700">{{ $issue }}</span>
+                                @endif
+                            </td>
+
+                            <td class="whitespace-nowrap px-3 py-4">₱{{ number_format($invoice->total, 2) }}</td>
+                            <td class="whitespace-nowrap px-3 py-4">₱{{ number_format($invoice->paid_amount, 2) }}</td>
+                            <td class="whitespace-nowrap px-3 py-4 font-semibold">₱{{ number_format($balance, 2) }}</td>
+                            <td class="px-3 py-4">
+                                {{-- Plain text status, no background color --}}
+                                <span style="background:none;color:#1e293b;font-weight:600;padding:0;white-space:nowrap;">
+                                    {{ $invoice->status }}
+                                </span>
+                            </td>
+                            <td class="px-3 py-4">
+                                @unless($isPaid)
+                                    <details>
+                                        <summary class="cursor-pointer whitespace-nowrap text-xs font-bold text-emerald-700">Record payment</summary>
+                                        <form method="POST" action="{{ route('invoices.pay', $invoice) }}" class="mt-2 flex flex-wrap items-center gap-1">
+                                            @csrf
+                                            <input class="w-24 rounded border p-1 text-xs" name="amount" type="number" step="0.01" min="0.01"
+                                                   max="{{ number_format($balance, 2, '.', '') }}"
+                                                   value="{{ number_format($balance, 2, '.', '') }}" required>
+                                            <select class="rounded border p-1 text-xs" name="method">
+                                                <option>Cash</option>
+                                                <option>GCash</option>
+                                                <option>Bank Transfer</option>
+                                            </select>
+                                            <button type="submit" class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white">Save</button>
+                                        </form>
+                                    </details>
+                                @endunless
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="py-10 text-center text-slate-500">No invoices yet. Complete a service job to create one.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4">{{ $invoices->links() }}</div>
+    </div>
+</x-layouts.app>

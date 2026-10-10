@@ -1,1 +1,76 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet"><link href="{{ asset('css/triple-m3.css') }}" rel="stylesheet"></head><body style="display:grid;min-height:100vh;place-items:center;padding:24px"><main class="tm-card" style="width:min(100%,430px);padding:34px"><div class="tm-mark">M3</div><p class="tm-eyebrow" style="margin-top:28px">TRIPLE-M3</p><h1 style="margin:8px 0;font-size:28px">{{ !empty($adminLogin) ? 'Staff sign in' : 'Customer sign in' }}</h1><p style="font-size:14px;opacity:.7">{{ !empty($adminLogin) ? 'Access the service operations workspace.' : 'Sign in to manage your appointment request.' }}</p>@if($errors->any())<p style="margin-top:18px;color:var(--teal);font-size:13px">{{ $errors->first() }}</p>@endif<form method="POST" action="{{ route('login') }}" style="display:grid;gap:16px;margin-top:28px">@csrf<label style="font-size:13px;font-weight:800">Email<input class="tm-input" name="email" type="email" value="{{ old('email') }}" required style="margin-top:7px"></label><label style="font-size:13px;font-weight:800">Password<input class="tm-input" name="password" type="password" required style="margin-top:7px"></label><label style="font-size:13px"><input type="checkbox" name="remember"> Keep me signed in</label><button class="tm-button">Sign in</button></form>@if(empty($adminLogin))<p style="margin-top:24px;font-size:13px">New customer? <a href="{{ route('register') }}" style="color:var(--teal);font-weight:800">Create an account to book</a></p>@else<p style="margin-top:24px;font-size:13px">Need to book service? <a href="{{ route('register') }}" style="color:var(--teal);font-weight:800">Create a customer account</a></p>@endif</main></body></html>
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>{{ !empty($adminLogin) ? 'Admin login' : 'Customer sign in' }} · Triple-M3</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="{{ asset('css/triple-m3.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/triple-m3-theme.css') }}" rel="stylesheet">
+    <style>
+        :root { --accent: var(--teal, #88736d); }
+        * { box-sizing: border-box; }
+        body { margin: 0; display: grid; min-height: 100vh; place-items: center; padding: 24px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #f6f5f3; color: #242323; }
+
+        .card { width: min(100%, 400px); padding: 32px; background: #fff; border: 1px solid #dedbd8; border-radius: 16px; }
+        .back { display: inline-block; margin-bottom: 20px; font-size: 13px; font-weight: 700; color: #6b7877; text-decoration: none; }
+        .back:hover { color: var(--accent); }
+
+        h1 { margin: 0 0 6px; font-size: 24px; font-weight: 800; }
+        .sub { margin: 0 0 24px; font-size: 14px; color: #6b7877; }
+
+        .error { margin-bottom: 18px; padding: 10px 12px; border-radius: 8px; background: #fdeeee; color: #a12a2a; font-size: 13px; }
+
+        label { display: block; font-size: 13px; font-weight: 700; }
+        input[type=email], input[type=password] { width: 100%; margin: 6px 0 16px; padding: 12px; border: 1px solid #d5dddc; border-radius: 8px; font: inherit; font-size: 14px; outline: none; }
+        input[type=email]:focus, input[type=password]:focus { border-color: var(--accent); }
+
+        .remember { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font-weight: 500; color: #6b7877; }
+
+        button { width: 100%; padding: 13px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+        button:hover { opacity: .92; }
+
+        .alt { margin: 22px 0 0; text-align: center; font-size: 13px; color: #6b7877; }
+        .alt a { color: var(--accent); font-weight: 700; text-decoration: none; }
+    </style>
+</head>
+
+<body>
+    <main class="card">
+        <a class="back" href="{{ url()->previous() !== url()->current() ? url()->previous() : url('/') }}">← Back</a>
+
+        <img src="{{ asset('images/triplem3.jpg') }}" alt="Triple-M3 logo" style="display:block;width:76px;height:76px;object-fit:contain;border-radius:50%;margin-bottom:20px">
+        <h1>{{ !empty($adminLogin) ? 'Admin login' : 'Customer sign in' }}</h1>
+        <p class="sub">{{ !empty($adminLogin) ? 'Access the service operations workspace.' : 'Sign in to manage your appointment request.' }}</p>
+
+        @if($errors->any())
+            <div class="error">{{ $errors->first() }}</div>
+        @endif
+
+        <form method="POST" action="{{ route('login') }}">
+            @csrf
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus>
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required>
+
+            <label class="remember">
+                <input type="checkbox" name="remember"> Keep me signed in
+            </label>
+
+            <button type="submit">Sign in</button>
+        </form>
+
+        <p class="alt">
+            @if(empty($adminLogin))
+                New customer? <a href="{{ route('register') }}">Create an account to book</a>
+            @else
+                Need to book service? <a href="{{ route('register') }}">Create a customer account</a>
+            @endif
+        </p>
+    </main>
+</body>
+
+</html>

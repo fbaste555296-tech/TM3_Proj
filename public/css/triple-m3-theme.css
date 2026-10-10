@@ -1,0 +1,39 @@
+:root {
+    --navy: #242323;
+    --teal: #88736d;
+    --ivory: #f6f5f3;
+}
+
+.tm-mark {
+    background: var(--teal);
+    color: #fff;
+}
+
+.app-logo img.mark {
+    object-fit: contain;
+    border-radius: 50%;
+    background: #fff;
+}
+
+.tm-sidebar {
+    background: #242323 !important;
+}
+
+.tm-sidebar .nav-active,
+.tm-sidebar a:hover {
+    background: #88736d !important;
+    color: #fff !important;
+}
+
+.tm-sidebar * {
+    color: #f6f5f3;
+}
+
+.overview-service-icon {
+    background: #eeecea;
+    color: #6d5a55;
+}
+
+.report-panel-title {
+    color: #242323;
+}

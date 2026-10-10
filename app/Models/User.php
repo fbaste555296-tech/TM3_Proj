@@ -24,6 +24,7 @@ class User extends Authenticatable
         'password',
         'role',
         'phone',
+        'service_types',
     ];
 
     /**
@@ -46,11 +47,22 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'service_types' => 'array',
         ];
     }
 
     public function isManagement(): bool
     {
         return in_array($this->role, ['admin', 'coordinator'], true);
+    }
+
+    public function hasServiceType(string $serviceType): bool
+    {
+        return in_array($serviceType, $this->service_types ?? [], true);
+    }
+
+    public function serviceTypesList(): array
+    {
+        return array_values(array_unique(array_filter($this->service_types ?? [])));
     }
 }
