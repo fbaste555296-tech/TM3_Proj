@@ -10,7 +10,11 @@ class EnsureManagementAccess
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user()?->isManagement()) {
+        if (! $request->user()) {
+            return redirect()->route('login');
+        }
+
+        if (! $request->user()->isManagement()) {
             return redirect()->route('home')->with('error', 'This area is reserved for Triple-M3 staff.');
         }
 
