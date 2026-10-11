@@ -131,6 +131,22 @@ class TechnicianAssignmentTest extends TestCase
             ->assertDontSee('Search customer');
     }
 
+    public function test_service_jobs_page_hides_all_global_filters(): void
+    {
+        [$admin] = $this->createAssignmentFixtures();
+
+        $this->actingAs($admin)
+            ->get('/admin/jobs')
+            ->assertOk()
+            ->assertDontSee('Date range')
+            ->assertDontSee('All Dates')
+            ->assertDontSee('All Technicians')
+            ->assertDontSee('Branch / Location')
+            ->assertDontSee('All Locations')
+            ->assertDontSee('Job status')
+            ->assertDontSee('All Statuses');
+    }
+
     public function test_service_jobs_can_be_searched_by_customer_or_technician_name(): void
     {
         [$admin, $customer, $technician] = $this->createAssignmentFixtures();

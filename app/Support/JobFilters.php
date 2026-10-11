@@ -16,7 +16,6 @@ class JobFilters
             'start_date' => 'required_if:range,custom|nullable|date_format:Y-m-d',
             'end_date' => 'required_if:range,custom|nullable|date_format:Y-m-d|after_or_equal:start_date',
             'technician_id' => 'nullable|exists:users,id',
-            'location' => 'nullable|string|max:1000',
             'status' => ['nullable', Rule::in(['Pending', 'Dispatched', 'In Progress', 'Completed', 'Cancelled'])],
         ]);
 
@@ -55,9 +54,6 @@ class JobFilters
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
-        if (!empty($filters['location'])) {
-            $query->whereHas('customer', fn (Builder $customerQuery) => $customerQuery->where('address', $filters['location']));
-        }
 
         return $query;
     }
@@ -66,7 +62,6 @@ class JobFilters
     {
         return $filters['range'] !== 'all'
             || !empty($filters['technician_id'])
-            || !empty($filters['location'])
             || !empty($filters['status']);
     }
 }

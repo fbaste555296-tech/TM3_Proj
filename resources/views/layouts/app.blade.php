@@ -152,7 +152,7 @@
                 {{ now()->format('l, M j') }}<br>
                 <span style="opacity:.6;">Keep every job moving.</span>
             </p>
-            @unless(request()->routeIs('customers.*', 'inventory.*', 'invoices.*'))
+            @unless(request()->routeIs('customers.*', 'inventory.*', 'invoices.*', 'jobs.*'))
             <form method="GET" action="{{ request()->url() }}" class="global-filter-bar">
                 @foreach(request()->query() as $key => $value)
                     @if(!in_array($key, ['range', 'start_date', 'end_date', 'technician_id', 'location', 'status', 'page', 'export'], true) && is_scalar($value))

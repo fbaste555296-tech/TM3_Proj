@@ -27,13 +27,17 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            $view->with([
-                'globalFilterTechnicians' => User::where('role', 'technician')->orderBy('name')->get(['id', 'name']),
-                'globalFilterLocations' => Customer::whereNotNull('address')
+            $globalFilterLocations = request()->routeIs('jobs.*')
+                ? []
+                : Customer::whereNotNull('address')
                     ->where('address', '!=', '')
                     ->distinct()
                     ->orderBy('address')
-                    ->pluck('address'),
+                    ->pluck('address');
+
+            $view->with([
+                'globalFilterTechnicians' => User::where('role', 'technician')->orderBy('name')->get(['id', 'name']),
+                'globalFilterLocations' => $globalFilterLocations,
                 'globalFilterStatuses' => ['Pending', 'Dispatched', 'In Progress', 'Completed', 'Cancelled'],
                 'globalFilterRange' => request()->query('range', request()->routeIs('reports.index') ? 'month' : 'all'),
             ]);

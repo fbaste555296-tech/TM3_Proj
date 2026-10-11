@@ -328,14 +328,35 @@ class OperationsController extends Controller {
             'unit_price' => 'required|numeric|min:0',
         ]);
     }
-    public function invoices()
+    public function invoices(Request $request)
     {
-        $invoices = Invoice::with('job.customer')
-            ->latest()
-            ->paginate(12)
-            ->withQueryString();
+        $search = trim((string) $request->query('search', ''));
+        $invoicesQuery = Invoice::with('job.customer')->latest();
 
-        return view('invoices.index', ['invoices' => $invoices]);
+        if ($search !== '') {
+            $invoicesQuery->whereHas('job.customer', function ($customerQuery) use ($search) {
+                $customerQuery->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('phone', 'like', '%'.$search.'%');
+            });
+        }
+
+        return view('invoices.index', [
+            'invoices' => $invoicesQuery->paginate(12)->withQueryString(),
+        ]);
+    }
+    public function updateInvoice(Request $request, Invoice $invoice)
+    {
+        $invoice->update($request->validate([
+            'status' => ['required', Rule::in(['Paid', 'Unpaid'])],
+        ]));
+
+        return redirect()->route('invoices.index', $request->query())->with('success', 'Invoice status updated.');
+    }
+    public function deleteInvoice(Invoice $invoice)
+    {
+        $invoice->delete();
+
+        return redirect()->route('invoices.index')->with('success', 'Invoice deleted.');
     }
     public function exportInvoices()
     {

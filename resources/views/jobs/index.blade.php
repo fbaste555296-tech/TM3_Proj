@@ -213,7 +213,7 @@
 
         <div class="card p-6">
             <form id="serviceJobSearchForm" action="{{ route('jobs.index') }}" method="GET" class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end">
-                @foreach(request()->only(['range', 'start_date', 'end_date', 'technician_id', 'location', 'status']) as $key => $value)
+                @foreach(request()->only(['range', 'start_date', 'end_date', 'technician_id']) as $key => $value)
                     <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                 @endforeach
                 <div class="min-w-0 flex-1">
