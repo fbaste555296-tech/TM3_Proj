@@ -615,18 +615,22 @@ class OperationsController extends Controller {
     }
     private function createBilling(ServiceJob $job): void
     {
-        $parts = (float) $job->parts()->sum(DB::raw('quantity * unit_price'));
-        $subtotal = round((float) $job->labor_cost + $parts, 2);
-        $tax = round($subtotal * 0.12, 2);
+        $subtotal = round((float) $job->labor_cost, 2);
         $totals = [
             'subtotal' => $subtotal,
-            'tax' => $tax,
-            'total' => round($subtotal + $tax, 2),
+            'tax' => 0,
+            'total' => $subtotal,
         ];
         $invoice = $job->invoice()->first();
 
         if ($invoice) {
-            $invoice->update($totals);
+            $paidAmount = (float) $invoice->paid_amount;
+            $invoice->update([
+                ...$totals,
+                'status' => $paidAmount >= $subtotal
+                    ? 'Paid'
+                    : ($paidAmount > 0 ? 'Partial' : 'Unpaid'),
+            ]);
         } else {
             Invoice::create([
                 'invoice_number' => 'INV-'.now()->format('ymd').'-'.str_pad((string) (Invoice::count() + 1), 3, '0', STR_PAD_LEFT),

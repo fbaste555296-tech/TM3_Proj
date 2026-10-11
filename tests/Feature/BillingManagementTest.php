@@ -122,7 +122,7 @@ class BillingManagementTest extends TestCase
         $this->assertDatabaseMissing('payments', ['id' => $payment->id]);
     }
 
-    public function test_editing_a_completed_job_updates_its_invoice_labor_total(): void
+    public function test_completed_job_invoice_total_matches_labor_cost_without_extra_charges(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $invoice = $this->createInvoice('Labor Customer', '09123456789', 'LABOR-UPDATE');
@@ -146,13 +146,33 @@ class BillingManagementTest extends TestCase
         $this->assertDatabaseHas('invoices', [
             'id' => $invoice->id,
             'subtotal' => 500,
-            'tax' => 60,
-            'total' => 560,
+            'tax' => 0,
+            'total' => 500,
         ]);
 
         $this->get(route('invoices.index'))
             ->assertOk()
-            ->assertSee('₱560.00');
+            ->assertSee('₱500.00');
+    }
+
+    public function test_completing_a_job_creates_invoice_for_labor_cost_only(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $invoice = $this->createInvoice('Labor Total Customer', '09123456780', 'LABOR-TOTAL');
+        $job = $invoice->job;
+        $job->update(['status' => 'In Progress', 'labor_cost' => 3000]);
+        $invoice->delete();
+
+        $this->actingAs($admin)
+            ->patch(route('jobs.status', $job), ['status' => 'Completed'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('invoices', [
+            'service_job_id' => $job->id,
+            'subtotal' => 3000,
+            'tax' => 0,
+            'total' => 3000,
+        ]);
     }
 
     private function createInvoice(string $customerName, string $phone, string $invoiceNumber): Invoice
