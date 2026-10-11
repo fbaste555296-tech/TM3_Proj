@@ -360,12 +360,13 @@
 
         <nav class="nav" aria-label="Main navigation">
             <a href="#services">Services</a>
-            <a href="{{ route('admin.login') }}" class="btn-primary">Admin Login</a>
             @auth
-                <a href="{{ route('customer.dashboard') }}">My appointments</a>
+                <a href="{{ auth()->user()->isManagement() ? route('dashboard') : route('customer.dashboard') }}">
+                    {{ auth()->user()->isManagement() ? 'Dashboard' : 'My appointments' }}
+                </a>
                 <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" style="border:0;background:none;color:#242323;font:inherit;font-weight:700;cursor:pointer;">Sign out</button></form>
             @else
-                <a href="{{ route('login') }}" class="btn-primary">Customer Sign In</a>
+                <a href="{{ route('login') }}" class="btn-primary">Sign In</a>
             @endauth
         </nav>
     </header>

@@ -69,7 +69,7 @@ class CustomerManagementTest extends TestCase
         $this->post('/login', [
             'email' => 'first@example.com',
             'password' => $password,
-        ])->assertRedirect(route('home'));
+        ])->assertRedirect(route('customer.dashboard'));
     }
 
     public function test_admin_must_provide_a_password_when_creating_a_customer(): void

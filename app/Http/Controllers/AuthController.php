@@ -15,11 +15,6 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
-    public function adminLogin(): View
-    {
-        return view('auth.login', ['adminLogin' => true]);
-    }
-
     public function store(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
@@ -35,8 +30,8 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(
-            Auth::user()->isManagement() ? route('dashboard') : route('home')
+        return redirect()->route(
+            Auth::user()->isManagement() ? 'dashboard' : 'customer.dashboard'
         );
     }
 

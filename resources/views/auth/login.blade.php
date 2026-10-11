@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>{{ !empty($adminLogin) ? 'Admin login' : 'Customer sign in' }} · Triple-M3</title>
+    <title>Sign In · Triple-M3</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link href="{{ asset('css/triple-m3.css') }}" rel="stylesheet">
     <link href="{{ asset('css/triple-m3-theme.css') }}" rel="stylesheet">
@@ -41,8 +41,8 @@
         <a class="back" href="{{ url()->previous() !== url()->current() ? url()->previous() : url('/') }}">← Back</a>
 
         <img src="{{ asset('images/triplem3.jpg') }}" alt="Triple-M3 logo" style="display:block;width:76px;height:76px;object-fit:contain;border-radius:50%;margin-bottom:20px">
-        <h1>{{ !empty($adminLogin) ? 'Admin login' : 'Customer sign in' }}</h1>
-        <p class="sub">{{ !empty($adminLogin) ? 'Access the service operations workspace.' : 'Sign in to manage your appointment request.' }}</p>
+        <h1>Sign In</h1>
+        <p class="sub">Sign in to continue to your Triple-M3 account.</p>
 
         @if($errors->any())
             <div class="error">{{ $errors->first() }}</div>
@@ -63,13 +63,7 @@
             <button type="submit">Sign in</button>
         </form>
 
-        <p class="alt">
-            @if(empty($adminLogin))
-                New customer? <a href="{{ route('register') }}">Create an account to book</a>
-            @else
-                Need to book service? <a href="{{ route('register') }}">Create a customer account</a>
-            @endif
-        </p>
+        <p class="alt">New customer? <a href="{{ route('register') }}">Create an account to book</a></p>
     </main>
 </body>
 
