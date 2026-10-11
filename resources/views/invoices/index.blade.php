@@ -55,8 +55,11 @@
                 <tbody>
                     @forelse($invoices as $invoice)
                         @php
-                            $balance = max(0, round($invoice->total - $invoice->paid_amount, 2));
-                            $isPaid  = strtolower(trim($invoice->status)) === 'paid' || $balance <= 0;
+                            $paidAmount = (float) $invoice->paid_amount;
+                            $total = (float) $invoice->total;
+                            $balance = max(0, round($total - $paidAmount, 2));
+                            $isPaid  = $balance <= 0;
+                            $paymentStatus = $isPaid ? 'Paid' : ($paidAmount > 0 ? 'Partial' : 'Unpaid');
                             $phone   = $invoice->job?->customer?->phone;
                             $issue   = trim((string) ($invoice->job?->notes ?? ''));
                             $isLong  = \Illuminate\Support\Str::length($issue) > 60;
@@ -98,7 +101,7 @@
                             <td class="px-3 py-4">
                                 {{-- Plain text status, no background color --}}
                                 <span style="background:none;color:#1e293b;font-weight:600;padding:0;white-space:nowrap;">
-                                    {{ $invoice->status }}
+                                    {{ $paymentStatus }}
                                 </span>
                             </td>
                             <td class="px-3 py-4">
@@ -109,7 +112,8 @@
                                                 data-edit-invoice
                                                 data-update-url="{{ route('invoices.update', $invoice) }}"
                                                 data-invoice-number="{{ $invoice->invoice_number }}"
-                                                data-current-status="{{ $invoice->status }}">Edit</button>
+                                                data-total="{{ number_format($total, 2, '.', '') }}"
+                                                data-paid="{{ number_format($paidAmount, 2, '.', '') }}">Edit</button>
                                         <form method="POST" action="{{ route('invoices.delete', $invoice) }}" onsubmit="return confirm('Delete this invoice and its payment records?');">
                                             @csrf
                                             @method('DELETE')
@@ -151,18 +155,30 @@
     <div id="invoiceEditModal" class="invoice-edit-modal" role="dialog" aria-modal="true" aria-labelledby="invoiceEditTitle" aria-hidden="true">
         <div class="invoice-edit-box">
             <button type="button" id="invoiceEditClose" class="absolute right-3 top-3 rounded-lg bg-slate-100 px-2 py-1 text-lg text-slate-700 hover:bg-slate-200" aria-label="Close">×</button>
-            <h2 id="invoiceEditTitle" class="brand text-lg font-bold text-slate-800">Edit invoice status</h2>
+            <h2 id="invoiceEditTitle" class="brand text-lg font-bold text-slate-800">Record invoice payment</h2>
             <p id="invoiceEditNumber" class="mt-1 text-sm text-slate-500"></p>
             <form id="invoiceEditForm" method="POST" class="mt-5">
                 @csrf
                 @method('PATCH')
-                <label for="invoiceEditStatus" class="label">Payment status</label>
-                <select id="invoiceEditStatus" name="status" class="field mt-1" required>
-                    <option value="">Select status</option>
-                    @foreach(['Paid', 'Unpaid'] as $status)
-                        <option value="{{ $status }}">{{ $status }}</option>
-                    @endforeach
-                </select>
+                <div class="grid gap-3 rounded-xl bg-stone-50 p-4 text-sm sm:grid-cols-2">
+                    <p>Total due <strong id="invoiceEditTotal" class="block text-slate-800"></strong></p>
+                    <p>Previously paid <strong id="invoiceEditPreviouslyPaid" class="block text-slate-800"></strong></p>
+                    <p>Paid after payment <strong id="invoiceEditPaid" class="block text-slate-800"></strong></p>
+                    <p>Remaining balance <strong id="invoiceEditBalance" class="block text-slate-800"></strong></p>
+                    <p class="sm:col-span-2">Status <strong id="invoiceEditStatus" class="block text-slate-800"></strong></p>
+                </div>
+                <div class="mt-4">
+                    <label for="invoiceEditAmount" class="label">Amount received now (₱)</label>
+                    <input id="invoiceEditAmount" name="amount" class="field mt-1" type="number" min="0" step="0.01" value="0" required>
+                </div>
+                <div class="mt-4">
+                    <label for="invoiceEditMethod" class="label">Payment method</label>
+                    <select id="invoiceEditMethod" name="method" class="field mt-1" required>
+                        <option>Cash</option>
+                        <option>GCash</option>
+                        <option>Bank Transfer</option>
+                    </select>
+                </div>
                 <div class="mt-5 flex justify-end gap-2">
                     <button type="button" id="invoiceEditCancel" class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200">Cancel</button>
                     <button type="submit" class="tm-button rounded-lg px-4 py-2 text-sm font-bold">Save changes</button>
@@ -175,10 +191,32 @@
         (() => {
             const modal = document.getElementById('invoiceEditModal');
             const form = document.getElementById('invoiceEditForm');
-            const status = document.getElementById('invoiceEditStatus');
+            const amount = document.getElementById('invoiceEditAmount');
             const invoiceNumber = document.getElementById('invoiceEditNumber');
+            const totalDisplay = document.getElementById('invoiceEditTotal');
+            const previouslyPaidDisplay = document.getElementById('invoiceEditPreviouslyPaid');
+            const paidDisplay = document.getElementById('invoiceEditPaid');
+            const balanceDisplay = document.getElementById('invoiceEditBalance');
+            const statusDisplay = document.getElementById('invoiceEditStatus');
             const closeButton = document.getElementById('invoiceEditClose');
             const cancelButton = document.getElementById('invoiceEditCancel');
+            let invoiceTotal = 0;
+            let previouslyPaid = 0;
+
+            const formatMoney = value => '₱' + value.toLocaleString('en-PH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+
+            const updatePaymentPreview = () => {
+                const received = Math.max(0, Number(amount.value) || 0);
+                const paid = Math.min(invoiceTotal, previouslyPaid + received);
+                const balance = Math.max(0, invoiceTotal - paid);
+
+                paidDisplay.textContent = formatMoney(paid);
+                balanceDisplay.textContent = formatMoney(balance);
+                statusDisplay.textContent = balance === 0 ? 'Paid' : (paid > 0 ? 'Partial' : 'Unpaid');
+            };
 
             const closeModal = () => {
                 modal.classList.remove('open');
@@ -188,14 +226,21 @@
             document.querySelectorAll('[data-edit-invoice]').forEach(button => {
                 button.addEventListener('click', () => {
                     form.action = button.dataset.updateUrl;
-                    status.value = button.dataset.currentStatus;
+                    invoiceTotal = Number(button.dataset.total) || 0;
+                    previouslyPaid = Number(button.dataset.paid) || 0;
                     invoiceNumber.textContent = button.dataset.invoiceNumber;
+                    totalDisplay.textContent = formatMoney(invoiceTotal);
+                    previouslyPaidDisplay.textContent = formatMoney(previouslyPaid);
+                    amount.max = Math.max(0, invoiceTotal - previouslyPaid).toFixed(2);
+                    amount.value = '0';
+                    updatePaymentPreview();
                     modal.classList.add('open');
                     modal.setAttribute('aria-hidden', 'false');
-                    status.focus();
+                    amount.focus();
                 });
             });
 
+            amount.addEventListener('input', updatePaymentPreview);
             closeButton.addEventListener('click', closeModal);
             cancelButton.addEventListener('click', closeModal);
             modal.addEventListener('click', event => {

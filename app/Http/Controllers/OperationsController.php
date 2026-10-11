@@ -350,11 +350,14 @@ class OperationsController extends Controller {
     }
     public function updateInvoice(Request $request, Invoice $invoice)
     {
-        $invoice->update($request->validate([
-            'status' => ['required', Rule::in(['Paid', 'Unpaid'])],
-        ]));
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0'],
+            'method' => ['required', 'string', 'max:50'],
+            'reference' => ['nullable', 'string', 'max:255'],
+        ]);
+        $this->recordInvoicePayment($invoice, (float) $data['amount'], $data['method'], $data['reference'] ?? null);
 
-        return redirect()->route('invoices.index', $request->query())->with('success', 'Invoice status updated.');
+        return redirect()->route('invoices.index', $request->query())->with('success', 'Invoice payment updated.');
     }
     public function deleteInvoice(Invoice $invoice)
     {
@@ -466,7 +469,50 @@ class OperationsController extends Controller {
             'Content-Disposition' => 'attachment; filename="billing-report.xlsx"',
         ]);
     }
-    public function pay(Request $r, Invoice $invoice){$d=$r->validate(['amount'=>'required|numeric|min:0.01','method'=>'required','reference'=>'nullable']); DB::transaction(function() use($d,$invoice){$invoice->payments()->create([...$d,'paid_at'=>now()]);$paid=$invoice->payments()->sum('amount');$invoice->update(['paid_amount'=>$paid,'status'=>$paid >= $invoice->total ? 'Paid' : 'Partial']);});return back()->with('success','Payment recorded.');}
+    public function pay(Request $request, Invoice $invoice)
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'method' => ['required', 'string', 'max:50'],
+            'reference' => ['nullable', 'string', 'max:255'],
+        ]);
+        $this->recordInvoicePayment($invoice, (float) $data['amount'], $data['method'], $data['reference'] ?? null);
+
+        return back()->with('success', 'Payment recorded.');
+    }
+
+    private function recordInvoicePayment(Invoice $invoice, float $amount, string $method, ?string $reference): void
+    {
+        DB::transaction(function () use ($invoice, $amount, $method, $reference): void {
+            $lockedInvoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            $amount = round($amount, 2);
+            $balance = max(0, round((float) $lockedInvoice->total - (float) $lockedInvoice->paid_amount, 2));
+
+            if ($amount > $balance) {
+                throw ValidationException::withMessages([
+                    'amount' => 'The payment cannot be greater than the remaining balance.',
+                ]);
+            }
+
+            if ($amount > 0) {
+                $lockedInvoice->payments()->create([
+                    'amount' => $amount,
+                    'method' => $method,
+                    'reference' => $reference,
+                    'paid_at' => now(),
+                ]);
+            }
+
+            $paidAmount = round((float) $lockedInvoice->paid_amount + $amount, 2);
+            $remainingBalance = max(0, round((float) $lockedInvoice->total - $paidAmount, 2));
+            $status = $remainingBalance <= 0 ? 'Paid' : ($paidAmount > 0 ? 'Partial' : 'Unpaid');
+
+            $lockedInvoice->update([
+                'paid_amount' => $paidAmount,
+                'status' => $status,
+            ]);
+        });
+    }
     public function updateCommission(Request $request, Commission $commission)
     {
         $commission->update($request->validate([

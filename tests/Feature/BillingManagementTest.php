@@ -32,24 +32,75 @@ class BillingManagementTest extends TestCase
             ->assertDontSee($matchingInvoice->invoice_number);
     }
 
-    public function test_invoice_status_can_be_updated_to_paid_unpaid_or_pending(): void
+    public function test_invoice_edit_records_payment_and_updates_paid_balance_and_status(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $invoice = $this->createInvoice('Status Customer', '09111111111', 'STATUS-TEST');
+        $invoice->update(['status' => 'Paid']);
 
-        foreach (['Paid', 'Unpaid'] as $status) {
-            $this->actingAs($admin)
-                ->patch(route('invoices.update', $invoice), ['status' => $status])
-                ->assertRedirect(route('invoices.index'));
+        $this->actingAs($admin)
+            ->get(route('invoices.index'))
+            ->assertOk()
+            ->assertSee('Unpaid')
+            ->assertSee('Record payment');
 
-            $this->assertDatabaseHas('invoices', [
-                'id' => $invoice->id,
-                'status' => $status,
-            ]);
-        }
+        $this->actingAs($admin)
+            ->patch(route('invoices.update', $invoice), [
+                'amount' => 40,
+                'method' => 'Cash',
+            ])
+            ->assertRedirect(route('invoices.index'));
 
-        $this->patch(route('invoices.update', $invoice), ['status' => 'Pending'])
-            ->assertSessionHasErrors('status');
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'paid_amount' => 40,
+            'status' => 'Partial',
+        ]);
+        $this->assertDatabaseHas('payments', [
+            'invoice_id' => $invoice->id,
+            'amount' => 40,
+            'method' => 'Cash',
+        ]);
+        $this->get(route('invoices.index'))
+            ->assertOk()
+            ->assertSee('₱40.00')
+            ->assertSee('₱72.00')
+            ->assertSee('Partial');
+
+        $this->patch(route('invoices.update', $invoice), [
+            'amount' => 72,
+            'method' => 'GCash',
+        ])->assertRedirect(route('invoices.index'));
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'paid_amount' => 112,
+            'status' => 'Paid',
+        ]);
+        $this->get(route('invoices.index'))
+            ->assertOk()
+            ->assertSee('₱0.00')
+            ->assertSee('Paid');
+    }
+
+    public function test_invoice_edit_rejects_payments_above_the_remaining_balance(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $invoice = $this->createInvoice('Overpayment Customer', '09111111112', 'OVERPAY-TEST');
+
+        $this->actingAs($admin)
+            ->patch(route('invoices.update', $invoice), [
+                'amount' => 112.01,
+                'method' => 'Cash',
+            ])
+            ->assertSessionHasErrors('amount');
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'paid_amount' => 0,
+            'status' => 'Unpaid',
+        ]);
+        $this->assertDatabaseCount('payments', 0);
     }
 
     public function test_invoice_can_be_deleted_with_its_recorded_payments(): void
