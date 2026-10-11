@@ -71,6 +71,39 @@ class BillingManagementTest extends TestCase
         $this->assertDatabaseMissing('payments', ['id' => $payment->id]);
     }
 
+    public function test_editing_a_completed_job_updates_its_invoice_labor_total(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $invoice = $this->createInvoice('Labor Customer', '09123456789', 'LABOR-UPDATE');
+        $job = $invoice->job;
+        $job->update(['labor_cost' => 0]);
+        $invoice->update(['subtotal' => 0, 'tax' => 0, 'total' => 0]);
+
+        $this->actingAs($admin)
+            ->patch('/admin/jobs/'.$job->id, [
+                'customer_id' => $job->customer_id,
+                'technician_id' => null,
+                'service_type' => 'Inspection',
+                'priority' => 'Normal',
+                'notes' => null,
+                'labor_cost' => 500,
+                'scheduled_date' => now()->addDays(2)->toDateString(),
+                'time_slot' => '08:00',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'subtotal' => 500,
+            'tax' => 60,
+            'total' => 560,
+        ]);
+
+        $this->get(route('invoices.index'))
+            ->assertOk()
+            ->assertSee('₱560.00');
+    }
+
     private function createInvoice(string $customerName, string $phone, string $invoiceNumber): Invoice
     {
         $customer = Customer::create([

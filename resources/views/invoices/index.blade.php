@@ -14,7 +14,7 @@
             </div>
             <div class="flex flex-col items-end gap-2">
                 <span style="background:none;color:#64748b;font-size:12px;font-weight:600;padding:0;height:fit-content;">Digital receipts</span>
-                <a href="{{ route('invoices.export') }}" class="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800">
+                <a href="{{ route('invoices.export') }}" class="tm-button rounded-lg px-4 py-2.5 text-sm font-bold">
                     Export Excel
                 </a>
             </div>
@@ -31,7 +31,7 @@
                        placeholder="Customer name or phone number..."
                        autocomplete="off">
             </div>
-            <button type="submit" class="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800">Search</button>
+            <button type="submit" class="tm-button rounded-lg px-4 py-2.5 text-sm font-bold">Search</button>
             @if(request()->filled('search'))
                 <a href="{{ route('invoices.index') }}" class="rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-200">Clear</a>
             @endif
@@ -69,7 +69,7 @@
                             <td class="px-3 py-4">{{ $invoice->job?->customer?->name ?? 'Unknown customer' }}</td>
                             <td class="whitespace-nowrap px-3 py-4">
                                 @if($phone)
-                                    <a href="tel:{{ $phone }}" class="font-semibold text-emerald-700 hover:underline">{{ $phone }}</a>
+                                    <a href="tel:{{ $phone }}" class="tm-link font-semibold">{{ $phone }}</a>
                                 @else
                                     <span class="text-slate-400">No phone</span>
                                 @endif
@@ -83,7 +83,7 @@
                                     <details>
                                         <summary class="cursor-pointer list-none">
                                             <span class="text-slate-700">{{ \Illuminate\Support\Str::limit($issue, 60) }}</span>
-                                            <span class="whitespace-nowrap text-xs font-bold text-emerald-700">Show full</span>
+                                            <span class="tm-link whitespace-nowrap text-xs font-bold">Show full</span>
                                         </summary>
                                         <p class="mt-2 whitespace-pre-line text-slate-700">{{ $issue }}</p>
                                     </details>
@@ -105,7 +105,7 @@
                                 <div class="flex min-w-32 flex-col items-start gap-2">
                                     <div class="flex items-center gap-2">
                                         <button type="button"
-                                                class="whitespace-nowrap rounded-lg bg-sky-600 px-3 py-2 text-xs font-bold text-white hover:bg-sky-700"
+                                                class="tm-button whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold"
                                                 data-edit-invoice
                                                 data-update-url="{{ route('invoices.update', $invoice) }}"
                                                 data-invoice-number="{{ $invoice->invoice_number }}"
@@ -118,7 +118,7 @@
                                     </div>
                                     @unless($isPaid)
                                         <details>
-                                            <summary class="cursor-pointer whitespace-nowrap text-xs font-bold text-emerald-700">Record payment</summary>
+                                            <summary class="tm-link cursor-pointer whitespace-nowrap text-xs font-bold">Record payment</summary>
                                         <form method="POST" action="{{ route('invoices.pay', $invoice) }}" class="mt-2 flex flex-wrap items-center gap-1">
                                             @csrf
                                             <input class="w-24 rounded border p-1 text-xs" name="amount" type="number" step="0.01" min="0.01"
@@ -129,7 +129,7 @@
                                                 <option>GCash</option>
                                                 <option>Bank Transfer</option>
                                             </select>
-                                            <button type="submit" class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white">Save</button>
+                                            <button type="submit" class="tm-button rounded px-2 py-1 text-xs font-semibold">Save</button>
                                         </form>
                                         </details>
                                     @endunless
@@ -165,7 +165,7 @@
                 </select>
                 <div class="mt-5 flex justify-end gap-2">
                     <button type="button" id="invoiceEditCancel" class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200">Cancel</button>
-                    <button type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-bold text-white hover:bg-sky-700">Save changes</button>
+                    <button type="submit" class="tm-button rounded-lg px-4 py-2 text-sm font-bold">Save changes</button>
                 </div>
             </form>
         </div>

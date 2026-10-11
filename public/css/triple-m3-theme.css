@@ -37,3 +37,21 @@
 .report-panel-title {
     color: #242323;
 }
+
+.tm-button {
+    background-color: var(--teal);
+    color: #fff;
+    transition: filter 0.15s ease;
+}
+
+.tm-button:hover {
+    filter: brightness(0.9);
+}
+
+.tm-link {
+    color: var(--teal);
+}
+
+.tm-link:hover {
+    text-decoration: underline;
+}

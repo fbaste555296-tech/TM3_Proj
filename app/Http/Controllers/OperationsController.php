@@ -185,6 +185,10 @@ class OperationsController extends Controller {
             return back()->withErrors(['technician_id'=>'This technician is busy doing another job. Choose an available technician or assign later.'])->withInput();
         }
         $job->update($d);
+        if ($job->status === 'Completed') {
+            $this->createBilling($job);
+        }
+
         return back()->with('success','Service job updated.');
     }
     public function deleteJob(ServiceJob $job){$job->delete(); return back()->with('success','Service job deleted.');}
@@ -563,5 +567,37 @@ class OperationsController extends Controller {
             'noShowStatusTracked' => false,
         ]);
     }
-    private function createBilling(ServiceJob $job):void { if($job->invoice) return; $parts=$job->parts()->sum(DB::raw('quantity * unit_price'));$sub=(float)$job->labor_cost+(float)$parts;$tax=$sub*.12; $invoice=Invoice::create(['invoice_number'=>'INV-'.now()->format('ymd').'-'.str_pad((string)(Invoice::count()+1),3,'0',STR_PAD_LEFT),'service_job_id'=>$job->id,'subtotal'=>$sub,'tax'=>$tax,'total'=>$sub+$tax]); if($job->technician_id) Commission::firstOrCreate(['service_job_id'=>$job->id],['technician_id'=>$job->technician_id,'rate'=>10,'amount'=>$sub*.10]); }
+    private function createBilling(ServiceJob $job): void
+    {
+        $parts = (float) $job->parts()->sum(DB::raw('quantity * unit_price'));
+        $subtotal = round((float) $job->labor_cost + $parts, 2);
+        $tax = round($subtotal * 0.12, 2);
+        $totals = [
+            'subtotal' => $subtotal,
+            'tax' => $tax,
+            'total' => round($subtotal + $tax, 2),
+        ];
+        $invoice = $job->invoice()->first();
+
+        if ($invoice) {
+            $invoice->update($totals);
+        } else {
+            Invoice::create([
+                'invoice_number' => 'INV-'.now()->format('ymd').'-'.str_pad((string) (Invoice::count() + 1), 3, '0', STR_PAD_LEFT),
+                'service_job_id' => $job->id,
+                ...$totals,
+            ]);
+        }
+
+        if ($job->technician_id) {
+            Commission::updateOrCreate(
+                ['service_job_id' => $job->id],
+                [
+                    'technician_id' => $job->technician_id,
+                    'rate' => 10,
+                    'amount' => round($subtotal * 0.10, 2),
+                ],
+            );
+        }
+    }
 }

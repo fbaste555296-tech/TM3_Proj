@@ -37,7 +37,7 @@
             font-size: 11px;
             font-weight: 800;
             letter-spacing: 0.18em;
-            color: #0f766e;
+            color: var(--teal);
             text-transform: uppercase;
         }
         .walkin-title {
@@ -89,7 +89,7 @@
             transition: opacity 0.2s ease;
         }
         .walkin-button:hover { opacity: 0.96; }
-        .walkin-button-primary { background: #0f766e; color: white; }
+        .walkin-button-primary { background: var(--teal); color: white; }
         .walkin-button-secondary { background: #f1f5f9; color: #1f2937; }
         .walkin-button-danger { background: #fee2e2; color: #b91c1c; }
         @media (max-width: 640px) {
@@ -118,7 +118,7 @@
                         </select>
                     </div>
 
-                    <button type="button" id="newJobButton" class="job-action-button bg-emerald-600 text-white hover:bg-emerald-700">
+                    <button type="button" id="newJobButton" class="job-action-button tm-button">
                         New service job
                     </button>
                 </div>
@@ -205,7 +205,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="mt-4 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">
+                <button type="submit" class="tm-button mt-4 rounded-xl px-4 py-2.5 text-sm font-bold">
                     Add technician
                 </button>
             </form>
@@ -226,7 +226,7 @@
                            placeholder="Search by customer or technician..."
                            autocomplete="off">
                 </div>
-                <button type="submit" class="job-action-button bg-emerald-600 text-white hover:bg-emerald-700">Search</button>
+                <button type="submit" class="job-action-button tm-button">Search</button>
                 @if(request()->filled('search'))
                     <a href="{{ request()->fullUrlWithQuery(['search' => null]) }}" class="job-action-button bg-slate-100 text-slate-700 hover:bg-slate-200">Clear</a>
                 @endif
@@ -307,7 +307,7 @@
                                     <th class="py-3 text-left text-xs font-bold uppercase text-slate-500">Phone</th>
                                     <td class="py-3">
                                         @if($job->customer?->phone)
-                                            <a href="tel:{{ $job->customer->phone }}" class="font-semibold text-emerald-700 hover:underline">{{ $job->customer->phone }}</a>
+                                            <a href="tel:{{ $job->customer->phone }}" class="tm-link font-semibold">{{ $job->customer->phone }}</a>
                                         @else
                                             <span class="text-slate-400">No phone number</span>
                                         @endif
